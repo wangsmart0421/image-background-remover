@@ -1,0 +1,44 @@
+{
+  "name": "bg-remover-cloudflare",
+  "version": "1.0.0",
+  "description": "Serverless image background remover using Cloudflare Workers and Remove.bg API",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "worker"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev:frontend\" \"npm run dev:worker\"",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev:worker": "cd worker && npm run dev",
+    "build": "npm run build:frontend && npm run build:worker",
+    "build:frontend": "cd frontend && npm run build",
+    "build:worker": "cd worker && npm run build",
+    "deploy": "npm run deploy:frontend && npm run deploy:worker",
+    "deploy:frontend": "cd frontend && npm run deploy",
+    "deploy:worker": "cd worker && npm run deploy",
+    "test": "npm run test:frontend && npm run test:worker",
+    "test:frontend": "cd frontend && npm test",
+    "test:worker": "cd worker && npm test",
+    "lint": "npm run lint:frontend && npm run lint:worker",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:worker": "cd worker && npm run lint",
+    "format": "prettier --write \"**/*.{js,jsx,ts,tsx,json,css,md}\""
+  },
+  "keywords": [
+    "background-removal",
+    "cloudflare",
+    "serverless",
+    "remove-bg",
+    "image-processing"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "prettier": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

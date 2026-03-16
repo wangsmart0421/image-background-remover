@@ -1,0 +1,36 @@
+name = "bg-remover-api"
+type = "javascript"
+account_id = "YOUR_CLOUDFLARE_ACCOUNT_ID"
+workers_dev = true
+compatibility_date = "2024-01-01"
+
+[vars]
+REMOVEBG_API_KEY = "YOUR_REMOVEBG_API_KEY"
+ALLOWED_ORIGINS = "https://bg-remover.pages.dev,http://localhost:3000"
+MAX_FILE_SIZE = "10485760"  # 10MB in bytes
+ENVIRONMENT = "production"
+
+[build]
+command = "npm run build"
+
+[build.upload]
+format = "service-worker"
+
+[[routes]]
+pattern = "api.bg-remover.your-domain.com/*"
+custom_domain = true
+
+[[routes]]
+pattern = "bg-remover-api.*.workers.dev/*"
+zone_id = "YOUR_ZONE_ID"
+
+# 配置限制
+[limits]
+cpu_ms = 50
+
+# 环境配置
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[env.staging]
+vars = { ENVIRONMENT = "staging" }
