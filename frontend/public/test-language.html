@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Language Test - Background Remover</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .lang-btn {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .lang-btn button {
+            padding: 8px 16px;
+            border: 1px solid #007bff;
+            background: white;
+            color: #007bff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .lang-btn button.active {
+            background: #007bff;
+            color: white;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Language Switching Test</h1>
+    
+    <div class="lang-btn">
+        <button onclick="switchLang('en')" class="active">English</button>
+        <button onclick="switchLang('zh')">中文</button>
+    </div>
+    
+    <div class="test-section">
+        <h2 data-en="Test Section 1" data-zh="测试部分 1">Test Section 1</h2>
+        <p data-en="This is a test paragraph to demonstrate language switching."
+           data-zh="这是一个测试段落，用于演示语言切换功能。">
+            This is a test paragraph to demonstrate language switching.
+        </p>
+        <div class="result">
+            <strong>Expected:</strong> Text should change between English and Chinese
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2 data-en="Interactive Elements" data-zh="交互元素">Interactive Elements</h2>
+        <button data-en="Click Me" data-zh="点击我">Click Me</button>
+        <input type="text" placeholder="Enter text" data-en-placeholder="Enter text" data-zh-placeholder="输入文本">
+        <select>
+            <option value="1" data-en="Option 1" data-zh="选项 1">Option 1</option>
+            <option value="2" data-en="Option 2" data-zh="选项 2">Option 2</option>
+        </select>
+        <div class="result">
+            <strong>Expected:</strong> Buttons, placeholders, and select options should switch languages
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2 data-en="Features List" data-zh="功能列表">Features List</h2>
+        <ul>
+            <li data-en="Fast processing" data-zh="快速处理">Fast processing</li>
+            <li data-en="High accuracy" data-zh="高准确率">High accuracy</li>
+            <li data-en="Free to use" data-zh="免费使用">Free to use</li>
+            <li data-en="No registration required" data-zh="无需注册">No registration required</li>
+        </ul>
+        <div class="result">
+            <strong>Expected:</strong> List items should translate correctly
+        </div>
+    </div>
+    
+    <script>
+        let currentLang = 'en';
+        
+        function switchLang(lang) {
+            if (currentLang === lang) return;
+            
+            currentLang = lang;
+            
+            // Update buttons
+            document.querySelectorAll('.lang-btn button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update all translatable elements
+            document.querySelectorAll('[data-en], [data-zh]').forEach(el => {
+                if (el.hasAttribute(`data-${lang}`)) {
+                    const text = el.getAttribute(`data-${lang}`);
+                    
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                        if (el.placeholder && el.hasAttribute(`data-${lang}-placeholder`)) {
+                            el.placeholder = el.getAttribute(`data-${lang}-placeholder`);
+                        }
+                    } else if (el.tagName === 'SELECT') {
+                        Array.from(el.options).forEach(option => {
+                            if (option.hasAttribute(`data-${lang}`)) {
+                                option.textContent = option.getAttribute(`data-${lang}`);
+                            }
+                        });
+                    } else {
+                        el.textContent = text;
+                    }
+                }
+            });
+            
+            // Update page title
+            document.title = lang === 'en' ? 'Language Test - Background Remover' : '语言测试 - 背景去除工具';
+            
+            // Show feedback
+            const feedback = lang === 'en' 
+                ? 'Language switched to English' 
+                : '已切换到中文';
+            alert(feedback);
+        }
+        
+        // Test the switch function
+        console.log('Language test page loaded. Click buttons to switch languages.');
+    </script>
+</body>
+</html>

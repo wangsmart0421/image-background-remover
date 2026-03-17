@@ -1,0 +1,174 @@
+name: Deploy to Cloudflare
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: '**/package.json'
+    
+    - name: Install dependencies
+      run: |
+        npm ci
+        cd frontend && npm ci
+        cd ../worker && npm ci
+    
+    - name: Lint
+      run: |
+        npm run lint
+    
+    - name: Test
+      run: |
+        npm test
+
+  deploy-frontend:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'frontend/package.json'
+    
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Build frontend
+      run: |
+        cd frontend
+        npm run build
+    
+    - name: Deploy to Cloudflare Pages
+      uses: cloudflare/pages-action@v1
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        projectName: 'bg-remover-frontend'
+        directory: 'frontend/build'
+        gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-worker:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'worker/package.json'
+    
+    - name: Install worker dependencies
+      run: |
+        cd worker
+        npm ci
+    
+    - name: Deploy to Cloudflare Workers
+      uses: cloudflare/wrangler-action@v3
+      with:
+        apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        command: deploy
+        workingDirectory: 'worker'
+        environment: 'production'
+      env:
+        REMOVEBG_API_KEY: ${{ secrets.REMOVEBG_API_KEY }}
+        MAX_FILE_SIZE: ${{ secrets.MAX_FILE_SIZE || '10485760' }}
+        ALLOWED_ORIGINS: ${{ secrets.ALLOWED_ORIGINS || '*' }}
+
+  verify-deployment:
+    needs: [deploy-frontend, deploy-worker]
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Verify API health
+      run: |
+        # 等待部署完成
+        sleep 30
+        
+        # 获取Worker URL（从secrets或默认）
+        WORKER_URL="${{ secrets.WORKER_URL }}"
+        if [ -z "$WORKER_URL" ]; then
+          # 从secrets构建URL
+          ACCOUNT_NAME=$(echo "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}" | cut -c1-8)
+          WORKER_URL="https://bg-remover-worker.$ACCOUNT_NAME.workers.dev"
+        fi
+        
+        echo "Testing API at: $WORKER_URL"
+        
+        # 测试健康检查
+        for i in {1..10}; do
+          if curl -s "$WORKER_URL/health" | grep -q "ok"; then
+            echo "✅ API health check passed"
+            break
+          fi
+          echo "Attempt $i: API not ready yet..."
+          sleep 10
+        done
+        
+        # 测试API信息
+        curl -s "$WORKER_URL/info" | jq .
+    
+    - name: Verify frontend
+      run: |
+        # 获取前端URL
+        FRONTEND_URL="${{ secrets.FRONTEND_URL }}"
+        if [ -z "$FRONTEND_URL" ]; then
+          FRONTEND_URL="https://bg-remover-frontend.pages.dev"
+        fi
+        
+        echo "Testing frontend at: $FRONTEND_URL"
+        
+        # 测试前端访问
+        for i in {1..10}; do
+          STATUS_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$FRONTEND_URL")
+          if [ "$STATUS_CODE" = "200" ]; then
+            echo "✅ Frontend is accessible"
+            break
+          fi
+          echo "Attempt $i: Frontend returned $STATUS_CODE"
+          sleep 10
+        done
+
+  notify:
+    needs: [verify-deployment]
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+    - name: Deployment status
+      run: |
+        if [ "${{ needs.verify-deployment.result }}" = "success" ]; then
+          echo "🎉 Deployment completed successfully!"
+          echo "Frontend: ${{ secrets.FRONTEND_URL || 'https://bg-remover-frontend.pages.dev' }}"
+          echo "API: ${{ secrets.WORKER_URL || 'https://bg-remover-worker.*.workers.dev' }}"
+        else
+          echo "❌ Deployment failed"
+          echo "Check the workflow logs for details"
+        fi

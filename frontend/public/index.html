@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-en="Image Background Remover - Demo" data-zh="图片背景去除工具 - 演示">Image Background Remover - Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .upload-area {
+            border: 3px dashed #cbd5e1;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+        
+        .upload-area:hover {
+            border-color: #3b82f6;
+            background-color: #f8fafc;
+        }
+        
+        .upload-area.dragover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+            transform: scale(1.02);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
+        }
+        
+        .processing {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .result-image {
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .result-image:hover {
+            transform: scale(1.02);
+        }
+        
+        .lang-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 50px;
+            padding: 8px 16px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: flex;
+            gap: 8px;
+        }
+        
+        .lang-btn button {
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .lang-btn button.active {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .lang-btn button:hover:not(.active) {
+            background: #f1f5f9;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center p-4">
+    <!-- Language Switcher -->
+    <div class="lang-btn">
+        <button id="lang-en" class="active" onclick="switchLanguage('en')">English</button>
+        <button id="lang-zh" onclick="switchLanguage('zh')">中文</button>
+    </div>
+
+    <div class="card w-full max-w-6xl p-8">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+                <i class="fas fa-magic text-purple-600 mr-3"></i>
+                <span data-en="Image Background Remover" data-zh="图片背景去除工具">Image Background Remover</span>
+            </h1>
+            <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+                <span data-en="Remove backgrounds from your images instantly using AI technology. No registration required. Try it now!"
+                      data-zh="使用AI技术即时去除图片背景。无需注册，立即试用！">
+                    Remove backgrounds from your images instantly using AI technology. No registration required. Try it now!
+                </span>
+            </p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <!-- Left Column: Upload & Controls -->
+            <div class="space-y-8">
+                <!-- Upload Area -->
+                <div class="upload-area p-10 text-center cursor-pointer" id="uploadArea">
+                    <div class="mb-6">
+                        <i class="fas fa-cloud-upload-alt text-6xl text-gray-400 mb-4"></i>
+                        <h3 class="text-2xl font-semibold text-gray-800 mb-2" data-en="Drag & Drop Your Image" data-zh="拖拽上传图片">
+                            Drag & Drop Your Image
+                        </h3>
+                        <p class="text-gray-600 mb-4" data-en="Supports JPG, PNG, WebP up to 10MB" data-zh="支持 JPG、PNG、WebP 格式，最大10MB">
+                            Supports JPG, PNG, WebP up to 10MB
+                        </p>
+                    </div>
+                    <button class="btn-primary text-white font-semibold py-3 px-8 rounded-full inline-flex items-center">
+                        <i class="fas fa-folder-open mr-2"></i>
+                        <span data-en="Browse Files" data-zh="浏览文件">Browse Files</span>
+                    </button>
+                    <p class="text-sm text-gray-500 mt-4" data-en="Or click to select from your computer" data-zh="或点击从电脑选择">
+                        Or click to select from your computer
+                    </p>
+                </div>
+
+                <!-- Controls -->
+                <div class="bg-gray-50 p-6 rounded-2xl">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-sliders-h mr-2"></i>
+                        <span data-en="Processing Options" data-zh="处理选项">Processing Options</span>
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-gray-700 mb-2" data-en="Output Format" data-zh="输出格式">Output Format</label>
+                            <div class="flex space-x-2">
+                                <button class="flex-1 py-2 px-4 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    PNG
+                                </button>
+                                <button class="flex-1 py-2 px-4 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    JPG
+                                </button>
+                                <button class="flex-1 py-2 px-4 border border-gray-300 rounded-lg hover:bg-gray-50">
+                                    WebP
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-gray-700 mb-2" data-en="Image Size" data-zh="图片尺寸">Image Size</label>
+                            <select class="w-full p-3 border border-gray-300 rounded-lg bg-white" id="sizeSelect">
+                                <option value="auto" data-en="Auto (Original Size)" data-zh="自动（原始尺寸）">Auto (Original Size)</option>
+                                <option value="preview" data-en="Preview (Small)" data-zh="预览（小尺寸）">Preview (Small)</option>
+                                <option value="hd" data-en="HD (1920x1080)" data-zh="高清 (1920x1080)">HD (1920x1080)</option>
+                                <option value="4k" data-en="4K (3840x2160)" data-zh="4K (3840x2160)">4K (3840x2160)</option>
+                            </select>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <input type="checkbox" id="crop" class="w-5 h-5 text-blue-600 rounded">
+                            <label for="crop" class="ml-2 text-gray-700" data-en="Auto-crop to subject" data-zh="自动裁剪到主体">
+                                Auto-crop to subject
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <button class="btn-primary w-full mt-6 py-4 text-white font-semibold rounded-lg flex items-center justify-center" id="processBtn">
+                        <i class="fas fa-bolt mr-2"></i>
+                        <span data-en="Remove Background Now" data-zh="立即去除背景">Remove Background Now</span>
+                    </button>
+                </div>
+
+                <!-- Stats -->
+                <div class="grid grid-cols-3 gap-4 text-center">
+                    <div class="bg-blue-50 p-4 rounded-xl">
+                        <div class="text-2xl font-bold text-blue-600">50+</div>
+                        <div class="text-gray-600" data-en="Images Processed" data-zh="已处理图片">Images Processed</div>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-xl">
+                        <div class="text-2xl font-bold text-green-600">2.5s</div>
+                        <div class="text-gray-600" data-en="Avg. Processing Time" data-zh="平均处理时间">Avg. Processing Time</div>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-xl">
+                        <div class="text-2xl font-bold text-purple-600">99%</div>
+                        <div class="text-gray-600" data-en="Accuracy Rate" data-zh="准确率">Accuracy Rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Preview & Results -->
+            <div class="space-y-8">
+                <!-- Processing Status -->
+                <div class="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
+                    <div class="flex items-center mb-4">
+                        <i class="fas fa-sync-alt text-yellow-600 text-2xl mr-3 processing"></i>
+                        <h3 class="text-xl font-semibold text-gray-800" data-en="Ready to Process" data-zh="准备处理">Ready to Process</h3>
+                    </div>
+                    <p class="text-gray-600 mb-4" data-en="Upload an image to see the magic happen. Our AI will automatically detect and remove the background."
+                       data-zh="上传图片查看神奇效果。我们的AI将自动检测并去除背景。">
+                        Upload an image to see the magic happen. Our AI will automatically detect and remove the background.
+                    </p>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-green-600 h-2 rounded-full" style="width: 0%" id="progressBar"></div>
+                    </div>
+                </div>
+
+                <!-- Before/After Comparison -->
+                <div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-exchange-alt mr-2"></i>
+                        <span data-en="Before & After" data-zh="处理前后对比">Before & After</span>
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="text-center">
+                            <div class="text-gray-600 mb-2" data-en="Original" data-zh="原始图片">Original</div>
+                            <div class="result-image bg-gray-100 p-8 flex items-center justify-center">
+                                <i class="fas fa-image text-5xl text-gray-400"></i>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-gray-600 mb-2" data-en="Background Removed" data-zh="背景已去除">Background Removed</div>
+                            <div class="result-image bg-gradient-to-br from-blue-50 to-purple-50 p-8 flex items-center justify-center">
+                                <i class="fas fa-check-circle text-5xl text-green-500"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Download Options -->
+                <div class="bg-gray-50 p-6 rounded-2xl">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-download mr-2"></i>
+                        <span data-en="Download Results" data-zh="下载结果">Download Results</span>
+                    </h3>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <button class="py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center">
+                            <i class="fas fa-file-image mr-2"></i>
+                            <span data-en="PNG Format" data-zh="PNG格式">PNG Format</span>
+                        </button>
+                        <button class="py-3 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center justify-center">
+                            <i class="fas fa-file-archive mr-2"></i>
+                            <span data-en="ZIP Package" data-zh="ZIP包">ZIP Package</span>
+                        </button>
+                    </div>
+                    <button class="w-full py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 flex items-center justify-center">
+                        <i class="fas fa-copy mr-2"></i>
+                        <span data-en="Copy to Clipboard" data-zh="复制到剪贴板">Copy to Clipboard</span>
+                    </button>
+                </div>
+
+                <!-- Features -->
+                <div class="space-y-4">
+                    <h3 class="text-xl font-semibold text-gray-800">
+                        <i class="fas fa-star mr-2"></i>
+                        <span data-en="Why Choose Our Tool" data-zh="为什么选择我们的工具">Why Choose Our Tool</span>
+                    </h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <i class="fas fa-bolt text-green-500 mr-3"></i>
+                            <span data-en="Lightning fast processing" data-zh="闪电般快速处理">Lightning fast processing</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-shield-alt text-blue-500 mr-3"></i>
+                            <span data-en="100% secure & private" data-zh="100%安全与隐私">100% secure & private</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-infinity text-purple-500 mr-3"></i>
+                            <span data-en="No limits, completely free" data-zh="无限制，完全免费">No limits, completely free</span>
+                        </div>
+                        <div class="flex items-center">
+                            <i class="fas fa-globe text-red-500 mr-3"></i>
+                            <span data-en="Works in your browser" data-zh="在浏览器中运行">Works in your browser</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="mt-12 pt-8 border-t border-gray-200 text-center text-gray-600">
+            <p>
+                <span data-en="Powered by" data-zh="技术支持："></span>
+                <span class="font-semibold">Cloudflare Workers</span> 
+                <span data-en="and" data-zh="和"></span>
+                <span class="font-semibold">Remove.bg API</span> • 
+                <span data-en="No images are stored on our servers" data-zh="图片不会存储在我们的服务器上">
+                    No images are stored on our servers
+                </span>
+            </p>
+            <div class="mt-4 flex justify-center space-x-6">
+                <a href="#" class="hover:text-blue-600"><i class="fab fa-github"></i> GitHub</a>
+                <a href="#" class="hover:text-blue-600"><i class="fas fa-book"></i> <span data-en="Documentation" data-zh="文档">Documentation</span></a>
+                <a href="#" class="hover:text-blue-600"><i class="fas fa-envelope"></i> <span data-en="Contact" data-zh="联系">Contact</span></a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Language management
+        let currentLang = 'en';
+        
+        function switchLanguage(lang) {
+            if (currentLang === lang) return;
+            
+            currentLang = lang;
+            
+            // Update language buttons
+            document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+            document.getElementById('lang-zh').classList.toggle('active', lang === 'zh');
+            
+            // Update all elements with data attributes
+            document.querySelectorAll('[data-en], [data-zh]').forEach(element => {
+                if (element.hasAttribute(`data-${lang}`)) {
+                    const newText = element.getAttribute(`data-${lang}`);
+                    
+                    // Handle different element types
+                    if (element.tagName === 'INPUT' || element.tagName === 'SELECT' || element.tagName === 'TEXTAREA') {
+                        if (element.placeholder) {
+                            element.placeholder = newText;
+                        } else if (element.tagName === 'SELECT') {
+                            // For select options, we need to update each option
+                            Array.from(element.options).forEach(option => {
+                                if (option.hasAttribute(`data-${lang}`)) {
+                                    option.textContent = option.getAttribute(`data-${lang}`);
+                                }
+                            });
+                        } else {
+                            element.value = newText;
+                        }
+                    } else if (element.tagName === 'IMG' && element.alt) {
+                        element.alt = newText;
+                    } else if (element.tagName === 'TITLE') {
+                        document.title = newText;
+                    } else {
+                        element.textContent = newText;
+                    }
+                }
+            });
+            
+            // Update HTML lang attribute
+            document.documentElement.lang = lang;
+            
+            // Save preference to localStorage
+            localStorage.setItem('preferredLang', lang);
+            
+            // Show language change notification
+            showLanguageNotification(lang);
+        }
+        
+        function showLanguageNotification(lang) {
+            const messages = {
+                en: "Language switched to English",
+                zh: "已切换到中文"
+            };
+            
+            // Create notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-20 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
+            notification.textContent = messages[lang];
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 2 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }
+        
+        // Initialize language from localStorage or browser preference
+        function initLanguage() {
+            const savedLang = localStorage.getItem('preferredLang');
+            const browserLang = navigator.language.startsWith('zh') ? 'zh' : 'en';
+            const defaultLang = savedLang || browserLang;
+            
+            // Set initial language
+            switchLanguage(defaultLang);
+        }
+        
+        // Demo interactivity
+        const uploadArea = document.getElementById('uploadArea');
+        const progressBar = document.getElementById('progressBar');
+        const processBtn = document.getElementById('processBtn');
+        
+        uploadArea.addEventListener('click', function() {
+            const messages = {
+                en: 'In the full version, this would open a file picker. For now, imagine you selected an image!',
+                zh: '在完整版本中，这将打开文件选择器。现在，想象您选择了一张图片！'
+            };
+            alert(messages[currentLang]);
+            
+            // Simulate processing
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 10;
+                progressBar.style.width = progress + '%';
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        const successMessages = {
+                            en: '🎉 Background removed successfully! You can now download the result.',
+                            zh: '🎉 背景去除成功！您现在可以下载结果了。'
+                        };
+                        alert(successMessages[currentLang]);
+                    }, 500);
+                }
+            }, 200);
+        });
+        
+        processBtn.addEventListener('click', function() {
+            const messages = {
+                en: 'Processing started! Please upload an image first.',
+                zh: '处理已开始！请先上传图片。'
+            };
+            alert(messages[currentLang]);
+        });
+        
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', function() {
+            this.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            const messages = {
+                en: 'File dropped! Processing would start now in the real app.',
+                zh: '文件已拖放！在实际应用中，处理现在将开始。'
+            };
+            alert(messages[currentLang]);
+        });
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initLanguage);
+    </script>

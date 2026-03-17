@@ -1,0 +1,19 @@
+============================================================
+🚀 背景去除API模拟服务器
+============================================================
+📍 本地地址: http://localhost:8787
+🌐 API端点:
+   GET  http://localhost:8787/health
+   GET  http://localhost:8787/info
+   POST http://localhost:8787/api/remove-bg
+
+📋 测试命令:
+   curl http://localhost:8787/health
+   curl -X POST http://localhost:8787/api/remove-bg \
+     -H "Content-Type: application/json" \
+     -d '{"image":"data:image/png;base64,..."}'
+
+🔧 这是模拟服务器，用于演示API接口。
+   在生产环境中，这将连接到真实的Remove.bg API。
+============================================================
+🔄 服务器运行中... 按 Ctrl+C 停止
