@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>🖼️ Background Remover - Direct Test</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 { color: #333; margin-bottom: 10px; }
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        .success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+        .upload-area {
+            border: 3px dashed #ccc;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #2196f3;
+            background: #f5f9ff;
+        }
+        .upload-area.dragover {
+            border-color: #2196f3;
+            background: #e3f2fd;
+        }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 20px;
+            display: none;
+        }
+        .result img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin: 15px 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .download-btn {
+            display: inline-block;
+            background: #4caf50;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            margin-top: 10px;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #2196f3;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .info {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .info a {
+            color: #2196f3;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>🖼️ Background Remover - Direct Test</h1>
+    <p>This is a standalone test page that connects directly to the working API.</p>
+    
+    <div class="info">
+        <strong>API Status:</strong> <span id="apiStatusText">Checking...</span>
+        <br>
+        <small>API Endpoint: <span id="apiEndpoint">https://bf270c95.bg-remover-frontend.pages.dev/api</span></small>
+    </div>
+    
+    <div class="upload-area" id="uploadArea">
+        <div style="font-size: 48px; margin-bottom: 15px;">📁</div>
+        <div style="font-size: 16px; color: #666; margin-bottom: 8px;">
+            Drag & drop your image here
+        </div>
+        <div style="font-size: 14px; color: #999;">
+            or click to select (max 10MB)
+        </div>
+        <input type="file" id="fileInput" accept="image/*" style="display: none;">
+    </div>
+    
+    <div id="fileInfo" style="display: none; margin: 15px 0; padding: 10px; background: #f5f5f5; border-radius: 6px;">
+        <strong>Selected:</strong> <span id="fileName"></span> (<span id="fileSize"></span>)
+    </div>
+    
+    <button id="processBtn" disabled>Remove Background</button>
+    
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Processing image... This may take 10-30 seconds.</p>
+    </div>
+    
+    <div class="result" id="result">
+        <h3 style="color: #2e7d32;">✅ Background Removed Successfully!</h3>
+        <img id="resultImage" alt="Processed result">
+        <br>
+        <a class="download-btn" id="downloadBtn" download="background-removed.png">Download Image</a>
+    </div>
+    
+    <div id="error" class="error status" style="display: none;"></div>
+    
+    <div class="info">
+        <strong>Technical Info:</strong>
+        <ul style="margin: 8px 0; padding-left: 20px;">
+            <li>API: Cloudflare Pages Functions</li>
+            <li>Processing: Remove.bg AI (50 free images/month)</li>
+            <li>Max file size: 10MB</li>
+            <li>Supported formats: JPEG, PNG, etc.</li>
+        </ul>
+        <small>
+            <a href="https://github.com/wangsmart0421/image-background-remover" target="_blank">View on GitHub</a> •
+            <a href="https://bf270c95.bg-remover-frontend.pages.dev/api/health" target="_blank">API Health Check</a>
+        </small>
+    </div>
+
+    <script>
+        // 配置
+        const API_BASE = 'https://bf270c95.bg-remover-frontend.pages.dev/api';
+        
+        // DOM 元素
+        const apiStatusText = document.getElementById('apiStatusText');
+        const apiEndpoint = document.getElementById('apiEndpoint');
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const processBtn = document.getElementById('processBtn');
+        const loading = document.getElementById('loading');
+        const result = document.getElementById('result');
+        const resultImage = document.getElementById('resultImage');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const errorDiv = document.getElementById('error');
+        
+        let selectedFile = null;
+        
+        // 初始化
+        async function init() {
+            // 显示 API 端点
+            apiEndpoint.textContent = API_BASE;
+            
+            // 检查 API 状态
+            await checkApiStatus();
+            
+            // 设置事件监听器
+            setupEventListeners();
+        }
+        
+        // 检查 API 状态
+        async function checkApiStatus() {
+            try {
+                const response = await fetch(API_BASE + '/health');
+                if (response.ok) {
+                    const data = await response.json();
+                    apiStatusText.textContent = '✅ Operational';
+                    apiStatusText.style.color = '#2e7d32';
+                    return true;
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                apiStatusText.textContent = `❌ Connection failed: ${error.message}`;
+                apiStatusText.style.color = '#c62828';
+                return false;
+            }
+        }
+        
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 点击上传区域
+            uploadArea.addEventListener('click', () => fileInput.click());
+            
+            // 拖拽上传
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('dragover');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                
+                if (e.dataTransfer.files.length) {
+                    handleFile(e.dataTransfer.files[0]);
+                }
+            });
+            
+            // 文件选择
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+            
+            // 处理按钮
+            processBtn.addEventListener('click', processImage);
+        }
+        
+        // 处理文件选择
+        function handleFile(file) {
+            // 验证文件类型
+            if (!file.type.startsWith('image/')) {
+                showError('Please select an image file (JPEG, PNG, etc.)');
+                return;
+            }
+            
+            // 验证文件大小
+            if (file.size > 10 * 1024 * 1024) {
+                showError('File size must be less than 10MB');
+                return;
+            }
+            
+            selectedFile = file;
+            
+            // 显示文件信息
+            fileName.textContent = file.name;
+            fileSize.textContent = formatFileSize(file.size);
+            fileInfo.style.display = 'block';
+            
+            // 启用处理按钮
+            processBtn.disabled = false;
+            
+            // 隐藏之前的错误和结果
+            hideError();
+            result.style.display = 'none';
+        }
+        
+        // 处理图片
+        async function processImage() {
+            if (!selectedFile) return;
+            
+            // 显示加载状态
+            loading.style.display = 'block';
+            processBtn.disabled = true;
+            processBtn.textContent = 'Processing...';
+            hideError();
+            result.style.display = 'none';
+            
+            try {
+                console.log('Starting image processing...');
+                
+                const formData = new FormData();
+                formData.append('image', selectedFile);
+                
+                console.log('Sending to:', API_BASE + '/remove-bg');
+                
+                const response = await fetch(API_BASE + '/remove-bg', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                console.log('Response status:', response.status);
+                
+                if (!response.ok) {
+                    let errorMessage = `Server error: ${response.status}`;
+                    try {
+                        const errorData = await response.json();
+                        errorMessage = errorData.error || errorData.details || errorMessage;
+                    } catch (e) {
+                        // 忽略 JSON 解析错误
+                    }
+                    throw new Error(errorMessage);
+                }
+                
+                // 获取处理后的图片
+                const blob = await response.blob();
+                console.log('Received image blob, size:', blob.size);
+                
+                if (blob.size === 0) {
+                    throw new Error('Received empty image');
+                }
+                
+                const imageUrl = URL.createObjectURL(blob);
+                
+                // 显示结果
+                resultImage.src = imageUrl;
+                downloadBtn.href = imageUrl;
+                result.style.display = 'block';
+                
+                // 滚动到结果
+                result.scrollIntoView({ behavior: 'smooth' });
+                
+                console.log('Processing completed successfully');
+                
+            } catch (error) {
+                console.error('Processing error:', error);
+                showError(`Processing failed: ${error.message}`);
+            } finally {
+                // 重置状态
+                loading.style.display = 'none';
+                processBtn.disabled = false;
+                processBtn.textContent = 'Remove Background';
+            }
+        }
+        
+        // 显示错误
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            errorDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // 隐藏错误
+        function hideError() {
+            errorDiv.style.display = 'none';
+        }
+        
+        // 格式化文件大小
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // 页面加载时初始化
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
