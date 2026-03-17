@@ -14,7 +14,7 @@
     "autoprefixer": "^10.4.14",
     "postcss": "^8.4.27",
     "@headlessui/react": "^1.7.17",
-    "react-dropzone": "^14.2.3",
+    "react-dropzone": "^15.0.0",
     "axios": "^1.4.0",
     "react-hot-toast": "^2.4.1",
     "lucide-react": "^0.294.0",
