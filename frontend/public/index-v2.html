@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🖼️ Image Background Remover</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',sans-serif;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh}
+        .page{display:none}
+        .page.active{display:block}
+        .navbar{background:rgba(255,255,255,.95);backdrop-filter:blur(10px);padding:15px 30px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 10px rgba(0,0,0,.1);position:sticky;top:0;z-index:100;flex-wrap:wrap;gap:15px}
+        .nav-brand{font-size:20px;font-weight:700;color:#333;display:flex;align-items:center;gap:8px}
+        .nav-links{display:flex;gap:10px;flex-wrap:wrap}
+        .nav-link{padding:8px 16px;border-radius:8px;cursor:pointer;color:#666;font-weight:500;transition:.3s;border:none;background:none;font-size:14px}
+        .nav-link:hover{background:#f0f0f0;color:#333}
+        .nav-link.active{background:#667eea;color:#fff}
+        .nav-right{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+        .lang-switch{padding:6px 12px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;font-size:14px}
+        .user-menu{display:flex;align-items:center;gap:12px}
+        .user-avatar{width:36px;height:36px;border-radius:50%;border:2px solid #667eea}
+        .user-name{font-weight:500;color:#333}
+        .quota-badge{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:4px 10px;border-radius:12px;font-size:12px;font-weight:500}
+        .btn{padding:8px 16px;border-radius:8px;font-weight:500;cursor:pointer;transition:.3s;border:none;font-size:14px}
+        .btn-primary{background:#667eea;color:#fff}
+        .btn-primary:hover{background:#5568d3}
+        .btn-outline{background:#fff;border:1px solid #667eea;color:#667eea}
+        .btn-outline:hover{background:#667eea;color:#fff}
+        .main-container{max-width:1200px;margin:0 auto;padding:40px 20px}
+        .hero{text-align:center;padding:60px 20px;background:rgba(255,255,255,.95);border-radius:20px;margin-bottom:30px}
+        .hero h1{font-size:2.5rem;color:#333;margin-bottom:15px}
+        .hero p{color:#666;font-size:1.1rem;margin-bottom:30px}
+        .hero-btn{display:inline-block;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:16px 40px;border-radius:12px;font-size:18px;font-weight:600;cursor:pointer;text-decoration:none;transition:.3s;box-shadow:0 4px 15px rgba(102,126,234,.4)}
+        .hero-btn:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(102,126,234,.5)}
+        .pricing-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin-top:30px}
+        .pricing-card{background:#fff;border-radius:16px;padding:30px;text-align:center;transition:.3s;box-shadow:0 4px 15px rgba(0,0,0,.1)}
+        .pricing-card:hover{transform:translateY(-5px);box-shadow:0 8px 25px rgba(0,0,0,.15)}
+        .pricing-card.featured{border:3px solid #667eea;position:relative}
+        .pricing-card.featured::before{content:'Most Popular';position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:#667eea;color:#fff;padding:4px 16px;border-radius:12px;font-size:12px;font-weight:600}
+        .pricing-name{font-size:1.5rem;font-weight:700;color:#333;margin-bottom:10px}
+        .pricing-price{font-size:2.5rem;font-weight:700;color:#667eea;margin-bottom:5px}
+        .pricing-price span{font-size:1rem;color:#666;font-weight:400}
+        .pricing-credits{color:#666;margin-bottom:20px;font-size:14px}
+        .pricing-features{text-align:left;margin-bottom:25px}
+        .pricing-features li{padding:8px 0;color:#555;list-style:none;display:flex;align-items:center;gap:10px}
+        .pricing-features li i{color:#28a745}
+        .pricing-btn{width:100%;padding:14px;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;transition:.3s}
+        .upload-container{background:#fff;border-radius:20px;padding:40px;margin-bottom:30px}
+        .upload-area{border:3px dashed #cbd5e1;border-radius:16px;padding:60px 20px;text-align:center;transition:.3s;cursor:pointer}
+        .upload-area:hover{border-color:#667eea;background:#f8f9ff}
+        .upload-area.disabled{opacity:.6;cursor:not-allowed}
+        .upload-icon{font-size:64px;color:#667eea;margin-bottom:20px}
+        .process-btn{width:100%;padding:18px;border-radius:12px;font-size:18px;font-weight:600;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;cursor:pointer;margin-top:20px;transition:.3s}
+        .process-btn:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 6px 20px rgba(102,126,234,.4)}
+        .process-btn:disabled{background:#cbd5e1;cursor:not-allowed}
+        .quota-display{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:20px;border-radius:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}
+        .quota-progress{flex:1;min-width:200px;margin:0 20px}
+        .quota-bar{height:10px;background:rgba(255,255,255,.3);border-radius:5px;overflow:hidden;margin-top:8px}
+        .quota-fill{height:100%;background:#fff;border-radius:5px;transition:width .5s}
+        .card{background:#fff;border-radius:16px;padding:30px;margin-bottom:20px}
+        .profile-header{display:flex;align-items:center;gap:20px;margin-bottom:30px;padding-bottom:20px;border-bottom:1px solid #eee;flex-wrap:wrap}
+        .profile-avatar{width:80px;height:80px;border-radius:50%;border:3px solid #667eea}
+        .profile-info h2{color:#333;margin-bottom:5px}
+        .profile-info p{color:#666}
+        .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px;margin-top:20px}
+        .stat-item{background:#f8f9fa;padding:20px;border-radius:12px;text-align:center}
+        .stat-value{font-size:2rem;font-weight:700;color:#667eea}
+        .stat-label{color:#666;margin-top:5px;font-size:14px}
+        .order-card{background:#fff;border-radius:12px;padding:20px;margin-bottom:15px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px}
+        .order-info h4{color:#333;margin-bottom:5px}
+        .order-info p{color:#666;font-size:14px}
+        .order-status{padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600}
+        .order-status.completed{background:#d4edda;color:#155724}
+        .result-container{background:#fff;border-radius:16px;padding:30px;text-align:center}
+        .result-image{max-width:100%;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.1);margin:20px 0}
+        .result-actions{display:flex;gap:15px;justify-content:center;flex-wrap:wrap}
+        .history-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:15px}
+        .history-item{background:#fff;border-radius:12px;overflow:hidden;padding:15px}
+        .history-item img{width:100%;height:140px;object-fit:cover;border-radius:8px}
+        .history-time{color:#666;font-size:12px;margin-top:10px}
+        .status-msg{padding:15px;border-radius:10px;margin:20px 0;text-align:center}
+        .status-msg.success{background:#d4edda;color:#155724}
+        .status-msg.error{background:#f8d7da;color:#721c24}
+        .status-msg.info{background:#d1ecf1;color:#0c5460}
+        .options-row{margin-top:20px;display:flex;gap:15px;justify-content:center;flex-wrap:wrap}
+        .modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:1000;align-items:center;justify-content:center}
+        .modal-overlay.active{display:flex}
+        .modal{background:#fff;border-radius:20px;padding:40px;max-width:400px;width:90%;text-align:center;position:relative}
+        .modal h3{font-size:1.5rem;color:#333;margin-bottom:20px}
+        .modal-close{position:absolute;top:15px;right:20px;font-size:24px;cursor:pointer;color:#999}
+        .settings-btn{text-align:left}
+        @media(max-width:768px){.navbar{flex-direction:column;text-align:center}.hero h1{font-size:1.8rem}.pricing-grid{grid-template-columns:1fr}}
+    </style>
+</head>
+<body>
+<nav class="navbar">
+    <div class="nav-brand"><i class="fas fa-image"></i> <span data-i18n="brand">Background Remover</span></div>
+    <div class="nav-links">
+        <button class="nav-link active" data-page="home" data-i18n="nav.home">首页</button>
+        <button class="nav-link" data-page="tool" data-i18n="nav.tool">工具</button>
+        <button class="nav-link" data-page="pricing" data-i18n="nav.pricing">套餐</button>
+        <button class="nav-link" data-page="profile" data-i18n="nav.profile">个人中心</button>
+        <button class="nav-link" data-page="orders" data-i18n="nav.orders">订单</button>
+    </div>
+    <div class="nav-right">
+        <select class="lang-switch" id="langSwitch">
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+        </select>
+        <div id="authNotLogin">
+            <button class="btn btn-primary" id="loginBtn" data-i18n="nav.login">登录</button>
+        </div>
+        <div class="user-menu" id="authLoggedIn" style="display:none">
+            <img src="" alt="Avatar" class="user-avatar" id="navAvatar">
+            <span class="user-name" id="navUserName"></span>
+            <span class="quota-badge" id="navQuota">0</span>
+            <button class="btn btn-outline" id="logoutBtn" data-i18n="nav.logout">退出</button>
+        </div>
+    </div>
+</nav>
+
+<!-- 首页 -->
+<div class="page active" id="page-home">
+    <div class="main-container">
+        <div class="hero">
+            <h1 data-i18n="home.title">🖼️ AI智能图片背景去除</h1>
+            <p data-i18n="home.subtitle">使用先进AI技术，一键自动去除图片背景。快速、免费、易于使用。</p>
+            <a class="hero-btn" onclick="navigateTo('tool')" data-i18n="home.cta">立即开始免费使用</a>
+        </div>
+        <div class="card">
+            <h2 style="text-align:center;margin-bottom:20px" data-i18n="pricing.title">选择您的套餐</h2>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="pricing-name" data-i18n="pricing.free.title">免费版</div>
+                    <div class="pricing-price">$0</div>
+                    <div class="pricing-credits" data-i18n="pricing.free.credits">10次 + 1次/天</div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> <span data-i18n="pricing.free.f1">注册赠送10次</span></li>
+                        <li><i class="fas fa-check"></i> <span data-i18n="pricing.free.f2">每日1次免费</span></li>
+                        <li><i class="fas fa-check"></i> <span data-i18n="pricing.free.f3">最大2MB文件</span></li>
+                    </ul>
+                    <button class="pricing-btn btn btn-outline" onclick="navigateTo('tool')" data-i18n="pricing.free.btn">开始使用</button>
+                </div>
+                <div class="pricing-card featured">
+                    <div class="pricing-name">Starter</div>
+                    <div class="pricing-price">$4.99<span>/月</span></div>
+                    <div class="pricing-credits">30次/月</div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> <span>每月30次</span></li>
+                        <li><i class="fas fa-check"></i> <span>最大5MB文件</span></li>
+                        <li><i class="fas fa-check"></i> <span>邮件支持</span></li>
+                    </ul>
+                    <button class="pricing-btn btn btn-primary">订阅</button>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-name">Pro</div>
+                    <div class="pricing-price">$9.99<span>/月</span></div>
+                    <div class="pricing-credits">50次/月</div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> <span>每月50次</span></li>
+                        <li><i class="fas fa-check"></i> <span>最大10MB文件</span></li>
+                        <li><i class="fas fa-check"></i> <span>PNG/JPG/WebP</span></li>
+                    </ul>
+                    <button class="pricing-btn btn btn-primary">订阅</button>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-name">Ultimate</div>
+                    <div class="pricing-price">$19.99<span>/月</span></div>
+                    <div class="pricing-credits">100次/月</div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> <span>每月100次</span></li>
+                        <li><i class="fas fa-check"></i> <span>最大25MB文件</span></li>
+                        <li><i class="fas fa-check"></i> <span>优先支持</span></li>
+                    </ul>
+                    <button class="pricing-btn btn btn-primary">订阅</button>
+                </div>
+            </div>
+        </div>
+        <div class="card" style="margin-top:30px">
+            <h2 style="text-align:center;margin-bottom:30px" data-i18n="features.title">为什么选择我们</h2>
+            <div class="stats-grid">
+                <div class="stat-item"><div class="stat-value"><i class="fas fa-magic"></i></div><div class="stat-label">AI驱动</div></div>
+                <div class="stat-item"><div class="stat-value"><i class="fas fa-bolt"></i></div><div class="stat-label">快速处理</div></div>
+                <div class="stat-item"><div class="stat-value"><i class="fas fa-shield-alt"></i></div><div class="stat-label">安全私密</div></div>
+                <div class="stat-item"><div class="stat-value"><i class="fas fa-globe"></i></div><div class="stat-label">多语言支持</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 工具页面 -->
+<div class="page" id="page-tool">
+    <div class="main-container">
+        <div class="upload-container">
+            <h2 style="text-align:center;margin-bottom:20px" data-i18n="tool.title">去除背景</h2>
+            <div class="quota-display" id="quotaDisplay" style="display:none">
+                <div><div style="font-size:14px;opacity:.9" data-i18n="tool.credits">剩余次数</div><div style="font-size:24px;font-weight:700" id="quotaRemaining">0</div></div>
+                <div class="quota-progress"><div style="display:flex;justify-content:space-between;font-size:14px"><span data-i18n="tool.used">已用</span><span id="quotaUsed">0</span></div><div class="quota-bar"><div class="quota-fill" id="quotaFill" style="width:0%"></div></div></div>
+                <div><div style="font-size:14px;opacity:.9" data-i18n="tool.plan">套餐</div><div style="font-weight:600" id="quotaPlan">Free</div></div>
+            </div>
+            <div class="status-msg info" id="toolStatus" data-i18n="tool.status">请登录后使用本工具</div>
+            <div class="upload-area disabled" id="uploadArea">
+                <div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                <div style="font-size:18px;font-weight:500;margin-bottom:10px" data-i18n="tool.uploadTitle">点击或拖拽上传图片</div>
+                <div style="color:#666;font-size:14px" data-i18n="tool.uploadFormat">支持 JPG, PNG, WebP。最大 10MB。</div>
+                <input type="file" id="fileInput" accept="image/*" style="display:none">
+            </div>
+            <button class="process-btn" id="processBtn" disabled data-i18n="tool.processBtn">请先选择图片</button>
+            <div class="options-row">
+                <select id="outputFormat" class="lang-switch"><option value="png">PNG</option><option value="jpg">JPG</option><option value="webp">WebP</option></select>
+                <select id="outputSize" class="lang-switch"><option value="auto">Auto</option><option value="preview">Preview</option><option value="small">Small</option><option value="medium">Medium</option><option value="large">Large</option><option value="hd">HD</option><option value="4k">4K</option></select>
+            </div>
+        </div>
+        <div class="result-container" id="resultContainer" style="display:none">
+            <h3 style="color:#28a745;margin-bottom:20px"><i class="fas fa-check-circle"></i> <span data-i18n="tool.success">处理完成！</span></h3>
+            <img id="resultImage" class="result-image" src="" alt="Result">
+            <div class="result-actions">
+                <button class="btn btn-primary" id="downloadBtn"><i class="fas fa-download"></i> <span data-i18n="tool.download">下载</span></button>
+                <button class="btn btn-outline" onclick="resetTool()"><i class="fas fa-plus"></i> <span data-i18n="tool.processMore">继续处理</span></button>
+            </div>
+        </div>
+        <div class="card" id="historySection" style="display:none">
+            <h3 style="margin-bottom:20px"><i class="fas fa-history"></i> <span data-i18n="tool.history">历史记录</span></h3>
+            <div class="history-grid" id="historyGrid"></div>
+        </div>
+    </div>
+</div>
+
+<!-- 套餐页面 -->
+<div class="page" id="page-pricing">
+    <div class="main-container">
+        <div class="card">
+            <h2 style="text-align:center;margin-bottom:10px" data-i18n="pricing.title">选择您的套餐</h2>
+            <p style="text-align:center;color:#666;margin-bottom:30px" data-i18n="pricing.subtitle">选择最适合您需求的套餐</p>
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <div class="pricing-name" data-i18n="pricing.free.title">免费版</div>
+                    <div class="pricing-price">$0</div>
+                    <div class="pricing-credits" data-i18n="pricing.free.credits">10次 + 1次/天</div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> <span data-i18n="pricing.free.f1">注册赠送10次</span></li>
+                        <li><i class="fas fa-check"></i> <span data-i18n="pricing.free.f2">每日1次免费</span></li>
+                        <li><i class="fas fa-check"></i> <span data-i18n="pricing.free.f3">最大2MB文件</span></li>
+                    </ul>
+                    <button class="pricing-btn btn btn-outline" onclick="navigateTo('tool')" data-i18n="pricing.free.btn">开始使用</button>
+                </div>
+                <div class="pricing-card featured">
+                    <div class="pricing-name">Starter</div>
+                    <div class="pricing-price">$4.99<span>/月</span></div>
+                    <div class="pricing-credits">30次/月</div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> <span>每月30次</span></li>
+                        <li><i class="fas fa-check"></i> <span>最大5MB文件</span></li>
+                        <li><i class="fas fa-check"></i> <span>邮件支持</span></li>
+                    </ul>
+                    <button class="pricing-btn btn btn-primary">订阅</button>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-name">Pro</div>
+                    <div class="pricing-price">$9.99<span>/月</span></div>
+                    <div class="pricing-credits">50次/月</div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> <span>每月50次</span></li>
+                        <li><i class="fas fa-check"></i> <span>最大10MB文件</span></li>
+                        <li><i class="fas fa-check"></i> <span>PNG/JPG/WebP</span></li>
+                    </ul>
+                    <button class="pricing-btn btn btn-primary">订阅</button>
+                </div>
+                <div class="pricing-card">
+                    <div class="pricing-name">Ultimate</div>
+                    <div class="pricing-price">$19.99<span>/月</span></div>
+                    <div class="pricing-credits">100次/月</div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i> <span>每月100次</span></li>
+                        <li><i class="fas fa-check"></i> <span>最大25MB文件</span></li>
+                        <li><i class="fas fa-check"></i> <span>优先支持</span></li>
+                    </ul>
+                    <button class="pricing-btn btn btn-primary">订阅</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 个人中心 -->
+<div class="page" id="page-profile">
+    <div class="main-container">
+        <div class="card">
+            <div class="profile-header">
+                <img src="" alt="Avatar" class="profile-avatar" id="profileAvatar">
+                <div class="profile-info">
+                    <h2 id="profileName">User Name</h2>
+                    <p id="profileEmail">user@email.com</p>
+                </div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item"><div class="stat-value" id="statCredits">0</div><div class="stat-label">剩余次数</div></div>
+                <div class="stat-item"><div class="stat-value" id="statUsed">0</div><div class="stat-label">已使用</div></div>
+                <div class="stat-item"><div class="stat-value" id="statPlan">Free</div><div class="stat-label">当前套餐</div></div>
+                <div class="stat-item"><div class="stat-value" id="statOrders">0</div><div class="stat-label">订单数</div></div>
+            </div>
+        </div>
+        <div class="card">
+            <h3 style="margin-bottom:20px"><i class="fas fa-cog"></i> 账户设置</h3>
+            <div style="display:flex;flex-direction:column;gap:15px">
+                <button class="btn btn-outline settings-btn"><i class="fas fa-user"></i> 编辑资料</button>
+                <button class="btn btn-outline settings-btn" onclick="navigateTo('orders')"><i class="fas fa-shopping-cart"></i> 查看订单</button>
+                <button class="btn btn-outline settings-btn"><i class="fas fa-bell"></i> 通知设置</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 订单中心 -->
+<div class="page" id="page-orders">
+    <div class="main-container">
+        <div class="card">
+            <h2 style="margin-bottom:20px"><i class="fas fa-shopping-cart"></i> <span data-i18n="orders.title">我的订单</span></h2>
+            <div id="ordersList">
+                <div style="text-align:center;padding:40px;color:#666">
+                    <i class="fas fa-shopping-bag" style="font-size:48px;margin-bottom:15px;color:#ddd"></i>
+                    <div data-i18n="orders.empty">暂无订单</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 登录弹窗 -->
+<div class="modal-overlay" id="loginModal">
+    <div class="modal">
+        <span class="modal-close" onclick="closeLoginModal()">&times;</span>
+        <h3 data-i18n="modal.loginTitle">登录 / 注册</h3>
+        <div style="margin-bottom:20px">
+            <button class="btn btn-primary" style="width:100%;padding:14px" onclick="doLogin()">
+                <i class="fas fa-google"></i> <span data-i18n="modal.googleLogin">使用 Google 登录</span>
+            </button>
+        </div>
+        <div style="color:#666;font-size:14px;margin-bottom:20px">或</div>
+        <div>
+            <input type="email" class="lang-switch" id="emailLogin" placeholder="邮箱" style="width:100%;margin-bottom:10px">
+            <input type="password" class="lang-switch" id="passwordLogin" placeholder="密码" style="width:100%;margin-bottom:10px">
+            <button class="btn btn-primary" style="width:100%" onclick="doEmailLogin()" data-i18n="modal.emailLogin">邮箱登录</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// 状态
+let currentUser = null;
+let userToken = localStorage.getItem('auth_token');
+let currentFile = null;
+let currentLang = localStorage.getItem('lang') || 'zh';
+
+// 翻译
+const i18n = {
+    zh: {
+        brand: '背景去除工具',
+        nav: { home: '首页', tool: '工具', pricing: '套餐', profile: '个人中心', orders: '订单', login: '登录', logout: '退出' },
+        home: { title: '🖼️ AI智能图片背景去除', subtitle: '使用先进AI技术，一键自动去除图片背景。快速、免费、易于使用。', cta: '立即开始免费使用' },
+        pricing: { title: '选择您的套餐', subtitle: '选择最适合您需求的套餐', free: { title: '免费版', credits: '10次 + 1次/天', f1: '注册赠送10次', f2: '每日1次免费', f3: '最大2MB文件', btn: '开始使用' }, orders: { title: '我的订单', empty: '暂无订单' }, features: { title: '为什么选择我们' } },
+        tool: { title: '去除背景', credits: '剩余次数', used: '已用', plan: '套餐', status: '请登录后使用本工具', uploadTitle: '点击或拖拽上传图片', uploadFormat: '支持 JPG, PNG, WebP。最大 10MB。', processBtn: '请先选择图片', success: '处理完成！', download: '下载', processMore: '继续处理', history: '历史记录' },
+        modal: { loginTitle: '登录 / 注册', googleLogin: '使用 Google 登录', emailLogin: '邮箱登录' }
+    },
+    en: {
+        brand: 'Background Remover',
+        nav: { home: 'Home', tool: 'Tool', pricing: 'Pricing', profile: 'Profile', orders: 'Orders', login: 'Login', logout: 'Logout' },
+        home: { title: '🖼️ AI Background Remover', subtitle: 'Remove image backgrounds automatically with AI. Fast, free, and easy to use.', cta: 'Get Started Free' },
+        pricing: { title: 'Choose Your Plan', subtitle: 'Select the plan that best fits your needs', free: { title: 'Free', credits: '10 + 1/day', f1: '10 credits on signup', f2: '1 credit daily', f3: '2MB max file', btn: 'Get Started' }, orders: { title: 'My Orders', empty: 'No orders yet' }, features: { title: 'Why Choose Us' } },
+        tool: { title: 'Remove Background', credits: 'Credits', used: 'Used', plan: 'Plan', status: 'Please login to use this tool', uploadTitle: 'Click or drag to upload image', uploadFormat: 'Supports JPG, PNG, WebP. Max 10MB.', processBtn: 'Select an image to start', success: 'Processing Complete!', download: 'Download', processMore: 'Process More', history: 'History' },
+        modal: { loginTitle: 'Login / Register', googleLogin: 'Continue with Google', emailLogin: 'Login with Email' }
+    }
+};
+
+function t(key) {
+    const keys = key.split('.');
+    let v = i18n[currentLang];
+    keys.forEach(k => v = v?.[k]);
+    return v || key;
+}
+
+function setLang(lang) {
+    currentLang = lang;
+    localStorage.setItem('lang', lang);
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (key) el.textContent = t(key);
+    });
+    document.getElementById('langSwitch').value = lang;
+}
+
+// 初始化语言
+document.getElementById('langSwitch').value = currentLang;
+setLang(currentLang);
+
+// 语言切换
+document.getElementById('langSwitch').addEventListener('change', e => setLang(e.target.value));
+
+// 导航
+document.querySelectorAll('.nav-link').forEach(btn => {
+    btn.addEventListener('click', () => navigateTo(btn.dataset.page));
+});
+
+function navigateTo(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    document.querySelector(`[data-page="${page}"]`)?.classList.add('active');
+    if (page === 'profile' || page === 'orders') {
+        if (!currentUser) showLoginModal();
+    }
+}
+
+// 登录/登出
+document.getElementById('loginBtn').addEventListener('click', showLoginModal);
+document.getElementById('logoutBtn').addEventListener('click', logout);
+
+function showLoginModal() { document.getElementById('loginModal').classList.add('active'); }
+function closeLoginModal() { document.getElementById('loginModal').classList.remove('active'); }
+
+function doLogin() {
+    const w = window.open('https://bg-remover-auth.wangsmart0421.workers.dev/auth/login', 'login', 'width=500,height=600');
+    if (!w) window.location.href = 'https://bg-remover-auth.wangsmart0421.workers.dev/auth/login';
+}
+
+function doEmailLogin() {
+    const email = document.getElementById('emailLogin').value;
+    const password = document.getElementById('passwordLogin').value;
+    if (!email || !password) { alert('请输入邮箱和密码'); return; }
+    console.log('Email login:', email);
+}
+
+function logout() {
+    localStorage.removeItem('auth_token');
+    userToken = null;
+    currentUser = null;
+    updateAuthUI();
+}
+
+function updateAuthUI() {
+    if (currentUser) {
+        document.getElementById('authNotLogin').style.display = 'none';
+        document.getElementById('authLoggedIn').style.display = 'flex';
+        document.getElementById('navAvatar').src = currentUser.picture || 'https://via.placeholder.com/36';
+        document.getElementById('navUserName').textContent = currentUser.name;
+        document.getElementById('navQuota').textContent = currentUser.credits || 0;
+        document.getElementById('quotaDisplay').style.display = 'flex';
+        document.getElementById('quotaRemaining').textContent = currentUser.credits || 0;
+    } else {
+        document.getElementById('authNotLogin').style.display = 'block';
+        document.getElementById('authLoggedIn').style.display = 'none';
+        document.getElementById('quotaDisplay').style.display = 'none';
+    }
+}
+
+// 文件上传
+document.getElementById('uploadArea').addEventListener('click', () => {
+    if (currentUser) document.getElementById('fileInput').click();
+});
+
+document.getElementById('fileInput').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (f) {
+        if (f.size > 10 * 1024 * 1024) { alert('文件太大，最大10MB'); return; }
+        currentFile = f;
+        document.getElementById('processBtn').disabled = false;
+        document.getElementById('processBtn').textContent = '开始处理';
+        document.getElementById('uploadArea').innerHTML = `<div class="upload-icon"><i class='fas fa-check-circle'></i></div><div style='font-size:18px;font-weight:500;margin-bottom:10px'>已选择: ${f.name}</div><div style='color:#666;font-size:14px'>大小: ${(f.size/1024/1024).toFixed(2)} MB</div>`;
+    }
+});
+
+// 处理图片
+document.getElementById('processBtn').addEventListener('click', async () => {
+    if (!currentFile || !currentUser) return;
+    document.getElementById('processBtn').disabled = true;
+    document.getElementById('processBtn').textContent = '处理中...';
+    document.getElementById('toolStatus').className = 'status-msg info';
+    document.getElementById('toolStatus').textContent = '正在处理...';
+    
+    try {
+        const form = new FormData();
+        form.append('image_file', currentFile);
+        form.append('size', document.getElementById('outputSize').value);
+        
+        const resp = await fetch('https://api.remove.bg/v1.0/removebg', {
+            method: 'POST',
+            headers: { 'X-Api-Key': 'gS4kUV3WBuoc27rAHKQKtKR1' },
+            body: form
+        });
+        
+        if (!resp.ok) throw new Error('API Error: ' + resp.status);
+        
+        const blob = await resp.blob();
+        const url = URL.createObjectURL(blob);
+        
+        document.getElementById('resultImage').src = url;
+        document.getElementById('downloadBtn').onclick = () => {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'background-removed.' + document.getElementById('outputFormat').value;
+            a.click();
+        };
+        document.getElementById('resultContainer').style.display = 'block';
+        document.getElementById('toolStatus').className = 'status-msg success';
+        document.getElementById('toolStatus').textContent = '处理完成！';
+    } catch (e) {
+        document.getElementById('toolStatus').className = 'status-msg error';
+        document.getElementById('toolStatus').textContent = '处理失败: ' + e.message;
+    } finally {
+        document.getElementById('processBtn').disabled = false;
+        document.getElementById('processBtn').textContent = '再次处理';
+    }
+});
+
+// 重置工具
+function resetTool() {
+    currentFile = null;
+    document.getElementById('fileInput').value = '';
+    document.getElementById('resultContainer').style.display = 'none';
+    document.getElementById('uploadArea').innerHTML = `<div class="upload-icon"><i class="fas fa-cloud-upload-alt"></i></div><div style="font-size:18px;font-weight:500;margin-bottom:10px" data-i18n="tool.uploadTitle">点击或拖拽上传图片</div><div style="color:#666;font-size:14px" data-i18n="tool.uploadFormat">支持 JPG, PNG, WebP。最大 10MB。</div>`;
+    document.getElementById('processBtn').disabled = true;
+    document.getElementById('processBtn').textContent = '请先选择图片';
+    document.getElementById('toolStatus').className = 'status-msg info';
+    document.getElementById('toolStatus').textContent = '请登录后使用本工具';
+}
+
+// 页面加载完成
+window.addEventListener('DOMContentLoaded', () => {
+    console.log('Page loaded, checking auth...');
+    if (userToken) {
+        // 模拟已登录用户数据（后续对接后端）
+        currentUser = { name: 'Test User', picture: 'https://via.placeholder.com/36', credits: 10 };
+        updateAuthUI();
+    }
+});
+</script>
